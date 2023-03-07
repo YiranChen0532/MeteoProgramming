@@ -1,2 +1,2 @@
 # MeteoProgramming
-Meteorology programming and plotting
+Meteorological programming and plotting
