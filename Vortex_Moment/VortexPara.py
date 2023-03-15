@@ -16,6 +16,13 @@ Created on Tue Mar  7 19:44:39 2023
 #2. lons = longitude (1D-ndarray)
 #3. lats = latitude (1D-ndarray)
 #4. zb = boundary contour (float) (can be calculated by the function Vortex_boundary)
+
+#usage:
+#1.get zb using Vortex_boundary()
+#2.get xy_map, dR_ls, Rdtheta_ls using Cart_coord()
+#3.get lon_, lat_, x_, y_ using Centroid(); get area using VortexArea()
+#4.get psi, r using Angel_AspectRatio()
+
 #return:
 #Centroid:
 #1. (lon_,lat_) = the centriod of vortex in Polar coordinates (lon_ in {0,360) lat_ in (0,90))
@@ -25,11 +32,14 @@ Created on Tue Mar  7 19:44:39 2023
 #2. r = aspect ratio, the ratio of major axis to minor axis (>1, usually 1.0-2.0, see Seviour(2013, GRL))
 #VortexArea:
 #1. area = the area of the vortex
+#Major_Minor:(optional)
+#1. major = major axis of ellipse(2a)
+#2. minor = minor axis of eliipse(2b)
 
 import numpy as np
 import xarray as xr
 
-e_lon=1.0
+e_lon=1.0 #resolution of longitude/latitude (deg)
 e_lat=1.0
 
 def find_nearest(array,value):
@@ -48,6 +58,7 @@ def Vortex_boundary(z,lats,zb_lat):
     return zb
 
 def Cart_coord(lons,lats,e_lon,e_lat):
+    #lons, lats: 1D numpy array
     nlon = len(lons)
     nlat = len(lats)
     xy_map = np.zeros((nlat,nlon,2))
@@ -67,6 +78,12 @@ def Cart_coord(lons,lats,e_lon,e_lat):
         for j in range(nlon):
             xy_map[i][j][0] = R*np.cos(np.deg2rad(lons[j])) #x
             xy_map[i][j][1] = R*np.sin(np.deg2rad(lons[j])) #y
+    
+    #return: 
+    #xy_map: 3D numpy array(nlon,nlat,2), Cartesian coord for every points in Polor coord
+    #As dxdy in Cartesian coord is converted to dR*Rdθ,
+    #dR:1D numpy array(nlat), derivative in the radial direction
+    #Rdtheta: 1D numpy array(nlat), derivative in the normal direction
     return xy_map, dR_ls, Rdtheta_ls
 
 def Vortex_Geo(z,zb,xy_map,dR_ls,Rdtheta_ls,k,l):
@@ -130,6 +147,7 @@ def Centroid(z,zb,xy_map,dR_ls,Rdtheta_ls):
     #sinlat_ = (1-R2)/(1+R2)
     #lat_ = np.rad2deg(np.arcsin(sinlat_))
     
+    #return:
     #The centroid of Votrex at the given moment
     #(lon_,lat_,) = in polar coord; (x_,y_) = in Cartsian coord
     return (lon_,lat_), (x_,y_) 
@@ -153,6 +171,17 @@ def Angel_AspectRatio(z,zb,xy_map,dR_ls,Rdtheta_ls, x_, y_):
     Jc2 = pow(jj20-jj02,2)
     r = np.sqrt(abs((Ja+np.sqrt(Jb2+Jc2))/(Ja-np.sqrt(Jb2+Jc2))))
     
+    #return
     #psi = the angle between x-axis and major axis of ellipse (in {0,180))
     #r = aspect ratio, the ratio of major axis to minor axis (>1)
     return psi,r
+
+def Major_Minor_axis(area,r):
+    minor = np.sqrt(area/(np.pi*r))*2
+    major = minor*r
+    return major, minor
+    #major = 2a, minor = 2b
+    
+    
+    
+    
